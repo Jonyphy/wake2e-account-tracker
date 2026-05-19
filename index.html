@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Boreas – Kontoverwaltung</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --surface: #13171f;
+      --surface2: #1a1f2b;
+      --border: #252b38;
+      --accent: #3d8ef8;
+      --accent2: #5ba3ff;
+      --green: #22c97a;
+      --red: #f85c5c;
+      --orange: #f8a93d;
+      --text: #e8ecf4;
+      --text2: #8b93a8;
+      --text3: #555e72;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --radius: 14px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.45);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(61,142,248,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(61,142,248,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow {
+      position: fixed;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(61,142,248,0.07) 0%, transparent 70%);
+      top: -200px; left: -100px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* HEADER */
+    header {
+      position: relative; z-index: 10;
+      padding: 20px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(11,14,20,0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), #6a5af9);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text3);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .header-right {
+      display: flex; align-items: center; gap: 16px;
+    }
+
+    .live-badge {
+      display: flex; align-items: center; gap: 7px;
+      background: rgba(34,201,122,0.1);
+      border: 1px solid rgba(34,201,122,0.25);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--green);
+      font-weight: 500;
+    }
+
+    .live-dot {
+      width: 7px; height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .btn-admin {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all 0.2s;
+    }
+    .btn-admin:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* MAIN */
+    main {
+      position: relative; z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    .page-title {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--text) 40%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .page-sub {
+      color: var(--text2);
+      font-size: 15px;
+      margin-bottom: 48px;
+    }
+
+    /* ACCOUNT CARDS */
+    .accounts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 700px) {
+      .accounts-grid { grid-template-columns: 1fr; }
+      header { padding: 16px 20px; }
+      .page-title { font-size: 26px; }
+    }
+
+    .account-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .account-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), #6a5af9);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .account-card.free::before { background: linear-gradient(90deg, var(--green), #1aab6a); opacity: 1; }
+    .account-card.occupied::before { background: linear-gradient(90deg, var(--orange), var(--red)); opacity: 1; }
+
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .account-name {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .status-pill {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .status-pill.free {
+      background: rgba(34,201,122,0.12);
+      color: var(--green);
+      border: 1px solid rgba(34,201,122,0.25);
+    }
+
+    .status-pill.occupied {
+      background: rgba(248,169,61,0.12);
+      color: var(--orange);
+      border: 1px solid rgba(248,169,61,0.25);
+    }
+
+    .card-email {
+      font-size: 13px;
+      color: var(--text3);
+      margin-bottom: 16px;
+      font-family: monospace;
+      letter-spacing: 0.3px;
+    }
+
+    .usage-info {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      min-height: 64px;
+    }
+
+    .usage-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px;
+    }
+
+    .usage-label { color: var(--text3); }
+    .usage-value { color: var(--text); font-weight: 500; }
+    .usage-timer { color: var(--accent2); font-weight: 600; font-size: 15px; font-family: monospace; }
+
+    .usage-empty {
+      color: var(--text3);
+      font-size: 13px;
+      text-align: center;
+      padding: 4px 0;
+    }
+
+    .btn-use {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), #6a5af9);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.3px;
+    }
+
+    .btn-use:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-use:active { transform: translateY(0); }
+
+    .btn-use:disabled {
+      background: var(--surface2);
+      color: var(--text3);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-release {
+      width: 100%;
+      background: transparent;
+      color: var(--red);
+      border: 1px solid rgba(248,92,92,0.35);
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all 0.2s;
+    }
+    .btn-release:hover { background: rgba(248,92,92,0.08); }
+
+    /* URGENT MESSAGE SECTION */
+    .urgent-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    .section-sub {
+      color: var(--text2);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    .form-group {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      border-color: var(--accent);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .form-group select option {
+      background: var(--surface2);
+    }
+
+    .btn-send {
+      background: linear-gradient(135deg, #f85c5c, #f8a93d);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 13px 32px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: opacity 0.2s, transform 0.1s;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .btn-send:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* LOG */
+    .log-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+    }
+
+    .log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .log-table th {
+      text-align: left;
+      color: var(--text3);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 0 0 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+
+    .log-table td {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(37,43,56,0.5);
+      color: var(--text2);
+      vertical-align: top;
+    }
+
+    .log-table tr:last-child td { border-bottom: none; }
+
+    .log-account-tag {
+      display: inline-block;
+      background: rgba(61,142,248,0.1);
+      color: var(--accent2);
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .log-empty {
+      text-align: center;
+      color: var(--text3);
+      padding: 24px 0;
+      font-size: 14px;
+    }
+
+    /* MODALS */
+    .overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .overlay.show { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 36px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: var(--shadow);
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .modal-sub {
+      color: var(--text2);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    .modal-actions {
+      display: flex; gap: 12px; margin-top: 24px;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: linear-gradient(135deg, var(--accent), #6a5af9);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: opacity 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+
+    .btn-secondary {
+      flex: 1;
+      background: transparent;
+      color: var(--text2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--text2); color: var(--text); }
+
+    /* Admin credentials display */
+    .cred-box {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .cred-title {
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+
+    .cred-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .cred-label { font-size: 12px; color: var(--text2); }
+    .cred-val {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--text);
+      background: rgba(61,142,248,0.1);
+      padding: 2px 8px;
+      border-radius: 5px;
+      word-break: break-all;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 13px;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      z-index: 200;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: rgba(34,201,122,0.4); }
+    .toast.error { border-color: rgba(248,92,92,0.4); }
+
+    /* Duration select in login modal */
+    .duration-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .dur-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      border-radius: 8px;
+      padding: 10px 6px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .dur-btn:hover, .dur-btn.selected {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(61,142,248,0.08);
+    }
+
+    .custom-dur {
+      display: flex; align-items: center; gap: 8px; margin-top: 8px;
+    }
+
+    .custom-dur input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font-body);
+      outline: none;
+    }
+    .custom-dur input:focus { border-color: var(--accent); }
+    .custom-dur span { font-size: 13px; color: var(--text3); white-space: nowrap; }
+
+    .warning-note {
+      background: rgba(248,169,61,0.08);
+      border: 1px solid rgba(248,169,61,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--orange);
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="glow"></div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🌬</div>
+      <div>
+        <div class="logo-text">Boreas</div>
+        <div class="logo-sub">Kontoverwaltung</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        Live-Status
+      </div>
+      <button class="btn-admin" onclick="openAdmin()">🔐 Admin</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+    <div class="page-title">Wake2e Konten</div>
+    <div class="page-sub">Wähle ein verfügbares Konto, gib deinen Namen ein und starte deine Sitzung.</div>
+
+    <!-- ACCOUNT CARDS -->
+    <div class="accounts-grid" id="cardsGrid">
+      <!-- Account 1 -->
+      <div class="account-card free" id="card0">
+        <div class="card-header">
+          <div class="account-name">Konto 1 – d.lafeld</div>
+          <div class="status-pill free" id="pill0">Verfügbar</div>
+        </div>
+        <div class="card-email" id="email0">d.lafeld@boreas.de</div>
+        <div class="usage-info" id="usageInfo0">
+          <div class="usage-empty">Gerade niemand eingeloggt</div>
+        </div>
+        <button class="btn-use" id="btn0" onclick="openLogin(0)">▶ Konto verwenden</button>
+      </div>
+
+      <!-- Account 2 -->
+      <div class="account-card free" id="card1">
+        <div class="card-header">
+          <div class="account-name">Konto 2 – rn.jony</div>
+          <div class="status-pill free" id="pill1">Verfügbar</div>
+        </div>
+        <div class="card-email" id="email1">rn.jony@boreas.de</div>
+        <div class="usage-info" id="usageInfo1">
+          <div class="usage-empty">Gerade niemand eingeloggt</div>
+        </div>
+        <button class="btn-use" id="btn1" onclick="openLogin(1)">▶ Konto verwenden</button>
+      </div>
+    </div>
+
+    <!-- URGENT MESSAGE -->
+    <div class="urgent-section">
+      <div class="section-title">🚨 Dringende Nachricht senden</div>
+      <div class="section-sub">Falls ein Konto dringend benötigt wird, kannst du hier eine direkte Nachricht an die verantwortliche Person senden.</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Dein Name</label>
+          <input type="text" id="urgentName" placeholder="z. B. Max Müller" />
+        </div>
+        <div class="form-group">
+          <label>Konto, das du benötigst</label>
+          <select id="urgentAccount">
+            <option value="d.lafeld@boreas.de">Konto 1 – d.lafeld@boreas.de</option>
+            <option value="rn.jony@boreas.de">Konto 2 – rn.jony@boreas.de</option>
+            <option value="Beide">Beide Konten</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label>Nachricht</label>
+        <textarea id="urgentMsg" placeholder="Beschreibe kurz, warum du das Konto dringend benötigst..."></textarea>
+      </div>
+      <button class="btn-send" onclick="sendUrgent()">
+        ✉️ Nachricht senden (Outlook)
+      </button>
+    </div>
+
+    <!-- USAGE LOG -->
+    <div class="log-section">
+      <div class="section-title">📋 Nutzungsprotokoll</div>
+      <div class="section-sub">Übersicht aller bisherigen Sitzungen in dieser Sitzung.</div>
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th>Zeit</th>
+            <th>Benutzer</th>
+            <th>Konto</th>
+            <th>Dauer</th>
+          </tr>
+        </thead>
+        <tbody id="logBody">
+          <tr><td colspan="4" class="log-empty">Noch keine abgeschlossenen Sitzungen</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- LOGIN MODAL -->
+  <div class="overlay" id="loginOverlay">
+    <div class="modal">
+      <div class="modal-title" id="loginTitle">Konto verwenden</div>
+      <div class="modal-sub" id="loginSub">Bitte gib deinen Namen ein und wähle, wie lange du das Konto nutzen möchtest.</div>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label>Dein Name *</label>
+        <input type="text" id="loginName" placeholder="Vor- und Nachname" />
+      </div>
+      <div class="form-group">
+        <label>Geplante Nutzungsdauer</label>
+        <div class="duration-grid">
+          <div class="dur-btn" onclick="selectDur(this,'15 Minuten')">15 Min</div>
+          <div class="dur-btn" onclick="selectDur(this,'30 Minuten')">30 Min</div>
+          <div class="dur-btn" onclick="selectDur(this,'1 Stunde')">1 Std</div>
+          <div class="dur-btn" onclick="selectDur(this,'2 Stunden')">2 Std</div>
+          <div class="dur-btn" onclick="selectDur(this,'3 Stunden')">3 Std</div>
+          <div class="dur-btn selected" onclick="selectDur(this,'Unbekannt')">Unbekannt</div>
+        </div>
+        <div class="custom-dur">
+          <input type="text" id="customDurInput" placeholder="Eigene Angabe..." />
+          <span>z. B. 45 Min</span>
+        </div>
+      </div>
+      <div class="warning-note">⚠️ Bitte gib das Konto frei, sobald du fertig bist, damit andere es nutzen können.</div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeLogin()">Abbrechen</button>
+        <button class="btn-primary" onclick="confirmLogin()">✓ Sitzung starten</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN MODAL -->
+  <div class="overlay" id="adminOverlay">
+    <div class="modal">
+      <div class="modal-title">🔐 Admin-Zugang</div>
+      <div class="modal-sub">Gib das Admin-Passwort ein, um die Zugangsdaten der Konten einzusehen.</div>
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label>Admin-Passwort</label>
+        <input type="password" id="adminPwInput" placeholder="Passwort eingeben..." onkeydown="if(event.key==='Enter') checkAdmin()" />
+      </div>
+      <div id="adminCredentials" style="display:none;">
+        <div class="cred-box">
+          <div class="cred-title">Konto 1</div>
+          <div class="cred-row"><span class="cred-label">E-Mail</span><span class="cred-val">d.lafeld@boreas.de</span></div>
+          <div class="cred-row"><span class="cred-label">Passwort</span><span class="cred-val" id="pw0Display">••••••••</span></div>
+        </div>
+        <div class="cred-box">
+          <div class="cred-title">Konto 2</div>
+          <div class="cred-row"><span class="cred-label">E-Mail</span><span class="cred-val">rn.jony@boreas.de</span></div>
+          <div class="cred-row"><span class="cred-label">Passwort</span><span class="cred-val" id="pw1Display">••••••••</span></div>
+        </div>
+      </div>
+      <div id="adminError" style="display:none; color: var(--red); font-size:13px; margin-bottom:8px;">❌ Falsches Passwort</div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeAdmin()">Schließen</button>
+        <button class="btn-primary" onclick="checkAdmin()">Zugang prüfen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ============================================================
+    // CONFIG – PASSWORDS (change these!)
+    // ============================================================
+    const ACCOUNTS = [
+      { email: 'd.lafeld@boreas.de',  password: 'PASSWORT1_HIER_EINTRAGEN' },
+      { email: 'rn.jony@boreas.de',   password: 'PASSWORT2_HIER_EINTRAGEN' }
+    ];
+    const ADMIN_PASSWORD = '12345'; // <-- Admin-Passwort hier ändern
+    const NOTIFY_EMAIL   = 'd.lafeld@boreas.de'; // Outlook-E-Mail für dringende Nachrichten
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    const sessions = [null, null]; // { user, duration, start, timerInterval }
+    let currentLoginIdx = null;
+    let selectedDuration = 'Unbekannt';
+    const log = [];
+
+    // ============================================================
+    // TIMER
+    // ============================================================
+    function formatElapsed(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const h = Math.floor(m / 60);
+      return h > 0
+        ? `${h}h ${String(m % 60).padStart(2,'0')}m ${String(s % 60).padStart(2,'0')}s`
+        : `${String(m).padStart(2,'0')}m ${String(s % 60).padStart(2,'0')}s`;
+    }
+
+    function startTimer(idx) {
+      sessions[idx].timerInterval = setInterval(() => {
+        if (!sessions[idx]) return;
+        const elapsed = Date.now() - sessions[idx].start;
+        const info = document.getElementById(`usageInfo${idx}`);
+        info.innerHTML = `
+          <div class="usage-row"><span class="usage-label">👤 Benutzer</span><span class="usage-value">${sessions[idx].user}</span></div>
+          <div class="usage-row" style="margin-top:8px"><span class="usage-label">⏱ Geplant</span><span class="usage-value">${sessions[idx].duration}</span></div>
+          <div class="usage-row" style="margin-top:8px"><span class="usage-label">🕐 Aktiv seit</span><span class="usage-timer">${formatElapsed(elapsed)}</span></div>
+        `;
+      }, 1000);
+    }
+
+    // ============================================================
+    // LOGIN MODAL
+    // ============================================================
+    function openLogin(idx) {
+      if (sessions[idx]) return;
+      currentLoginIdx = idx;
+      selectedDuration = 'Unbekannt';
+      document.getElementById('loginName').value = '';
+      document.getElementById('customDurInput').value = '';
+      document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.dur-btn')[5].classList.add('selected'); // "Unbekannt"
+      document.getElementById(`loginTitle`).textContent = `Konto ${idx+1} – ${ACCOUNTS[idx].email}`;
+      document.getElementById('loginOverlay').classList.add('show');
+      setTimeout(() => document.getElementById('loginName').focus(), 100);
+    }
+
+    function closeLogin() {
+      document.getElementById('loginOverlay').classList.remove('show');
+      currentLoginIdx = null;
+    }
+
+    function selectDur(el, val) {
+      document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedDuration = val;
+      document.getElementById('customDurInput').value = '';
+    }
+
+    function confirmLogin() {
+      const name = document.getElementById('loginName').value.trim();
+      if (!name) { showToast('❗ Bitte gib deinen Namen ein.', 'error'); return; }
+      const custom = document.getElementById('customDurInput').value.trim();
+      const duration = custom || selectedDuration;
+      const idx = currentLoginIdx;
+
+      sessions[idx] = { user: name, duration, start: Date.now(), timerInterval: null };
+
+      // Update card UI
+      const card = document.getElementById(`card${idx}`);
+      card.className = 'account-card occupied';
+      document.getElementById(`pill${idx}`).className = 'status-pill occupied';
+      document.getElementById(`pill${idx}`).textContent = 'Belegt';
+      document.getElementById(`btn${idx}`).outerHTML =
+        `<button class="btn-release" onclick="releaseAccount(${idx})">✕ Sitzung beenden & Konto freigeben</button>`;
+
+      startTimer(idx);
+      closeLogin();
+      showToast(`✅ Sitzung für ${name} gestartet!`, 'success');
+    }
+
+    // ============================================================
+    // RELEASE
+    // ============================================================
+    function releaseAccount(idx) {
+      if (!sessions[idx]) return;
+      const s = sessions[idx];
+      const elapsed = formatElapsed(Date.now() - s.start);
+      clearInterval(s.timerInterval);
+
+      // Log entry
+      log.unshift({
+        time: new Date().toLocaleTimeString('de-DE'),
+        user: s.user,
+        account: ACCOUNTS[idx].email,
+        duration: elapsed
+      });
+      renderLog();
+
+      sessions[idx] = null;
+
+      // Reset card
+      const card = document.getElementById(`card${idx}`);
+      card.className = 'account-card free';
+      document.getElementById(`pill${idx}`).className = 'status-pill free';
+      document.getElementById(`pill${idx}`).textContent = 'Verfügbar';
+      document.getElementById(`usageInfo${idx}`).innerHTML = `<div class="usage-empty">Gerade niemand eingeloggt</div>`;
+
+      // Replace release button with use button
+      const relBtn = card.querySelector('.btn-release');
+      if (relBtn) {
+        relBtn.outerHTML = `<button class="btn-use" id="btn${idx}" onclick="openLogin(${idx})">▶ Konto verwenden</button>`;
+      }
+
+      showToast(`✅ Konto ${idx+1} wurde freigegeben.`, 'success');
+    }
+
+    // ============================================================
+    // LOG
+    // ============================================================
+    function renderLog() {
+      const tbody = document.getElementById('logBody');
+      if (log.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="log-empty">Noch keine abgeschlossenen Sitzungen</td></tr>';
+        return;
+      }
+      tbody.innerHTML = log.map(e => `
+        <tr>
+          <td>${e.time}</td>
+          <td>${e.user}</td>
+          <td><span class="log-account-tag">${e.account}</span></td>
+          <td>${e.duration}</td>
+        </tr>
+      `).join('');
+    }
+
+    // ============================================================
+    // URGENT MESSAGE (mailto Outlook)
+    // ============================================================
+    function sendUrgent() {
+      const name = document.getElementById('urgentName').value.trim();
+      const account = document.getElementById('urgentAccount').value;
+      const msg = document.getElementById('urgentMsg').value.trim();
+      if (!name || !msg) { showToast('❗ Bitte alle Felder ausfüllen.', 'error'); return; }
+
+      // Build current status
+      const status0 = sessions[0] ? `Konto 1 belegt von: ${sessions[0].user}` : 'Konto 1 frei';
+      const status1 = sessions[1] ? `Konto 2 belegt von: ${sessions[1].user}` : 'Konto 2 frei';
+
+      const subject = encodeURIComponent(`[DRINGEND] Wake2e-Konto benötigt von ${name}`);
+      const body = encodeURIComponent(
+        `Dringende Anfrage von: ${name}\n\n` +
+        `Benötigtes Konto: ${account}\n\n` +
+        `Nachricht:\n${msg}\n\n` +
+        `--- Aktueller Status ---\n${status0}\n${status1}\n\n` +
+        `Gesendet über: Boreas Kontoverwaltung`
+      );
+
+      window.location.href = `mailto:${NOTIFY_EMAIL}?subject=${subject}&body=${body}`;
+      showToast('✉️ E-Mail-Programm wird geöffnet...', 'success');
+    }
+
+    // ============================================================
+    // ADMIN
+    // ============================================================
+    function openAdmin() {
+      document.getElementById('adminPwInput').value = '';
+      document.getElementById('adminCredentials').style.display = 'none';
+      document.getElementById('adminError').style.display = 'none';
+      document.getElementById('adminOverlay').classList.add('show');
+      setTimeout(() => document.getElementById('adminPwInput').focus(), 100);
+    }
+
+    function closeAdmin() {
+      document.getElementById('adminOverlay').classList.remove('show');
+    }
+
+    function checkAdmin() {
+      const pw = document.getElementById('adminPwInput').value;
+      if (pw === ADMIN_PASSWORD) {
+        document.getElementById('adminError').style.display = 'none';
+        document.getElementById('pw0Display').textContent = ACCOUNTS[0].password;
+        document.getElementById('pw1Display').textContent = ACCOUNTS[1].password;
+        document.getElementById('adminCredentials').style.display = 'block';
+      } else {
+        document.getElementById('adminError').style.display = 'block';
+        document.getElementById('adminCredentials').style.display = 'none';
+      }
+    }
+
+    // ============================================================
+    // TOAST
+    // ============================================================
+    function showToast(msg, type = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast show ${type}`;
+      setTimeout(() => { t.className = 'toast'; }, 3500);
+    }
+
+    // Close overlays on background click
+    document.getElementById('loginOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeLogin(); });
+    document.getElementById('adminOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeAdmin(); });
+  </script>
+</body>
+</html>
